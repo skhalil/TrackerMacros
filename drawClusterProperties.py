@@ -4,6 +4,7 @@ from ROOT import gROOT, TFile, TF1, gStyle, gDirectory, TTree, TCanvas, TH1F, TH
 from ROOT import kBlack, kGreen, kOrange, kGreen, kRed, kBlue, kTeal, kPink, kViolet
 from readLumi import readLumiInfo
 gROOT.ProcessLine('.L ./fitting.C')
+gROOT.SetBatch(True)
 from ROOT import fitting
 gStyle.SetOptStat(0)
 gStyle.SetOptTitle(0)
@@ -46,35 +47,39 @@ parser.add_option('--plotDir', metavar='P', type='string', action='store',
                   help='output directory of plots')
 
 parser.add_option('--inputRunLumiInfo', metavar='P', type='string', action='store',
-                  default='run_ls_instlumi_pileup_fill_6650_6759.txt', 
+                  default='run_ls_instlumi_pileup_2018.txt', 
                   dest='inputRunLumiInfo',
                   help='input text file obtained from brilcal')
 
 parser.add_option('--minRun', metavar='P', type='int', action='store',
-                  default='316109', 
+                  default='317650', 
                   dest='minRun',
                   help='minRun range to loop over ntuple entries')
 
 parser.add_option('--maxRun', metavar='P', type='int', action='store',
-                  default='316109', 
+                  default='317650', 
                   dest='maxRun',
                   help='maxRun range to loop over ntuple entries')
 
 parser.add_option('--minInstLumi', metavar='P', type='float', action='store',
-                  default='3.0', 
+                  default='13.0', 
                   dest='minInstLumi',
                   help='minInstLumi range to consider in runls maps')
 
 parser.add_option('--maxInstLumi', metavar='P', type='float', action='store',
-                  default='6.0', 
+                  default='15.0', 
                   dest='maxInstLumi',
                   help='maxInstLumi range to consider in runls maps')
 
 parser.add_option('--inputNTupleFile', metavar='P', type='string', action='store',
-                  default='Efficiency_316109.root', 
+                  default='Efficiency_317650_0.root', 
                   dest='inputNTupleFile',
                   help='input ntuple file')
 
+parser.add_option('--outFile', metavar='P', type='string', action='store',
+                  default='out_317650_0.root',
+                  dest='outFile',
+                  help='output file')
 
 (options,args) = parser.parse_args()
 # ==========end: options =============
@@ -86,7 +91,7 @@ minInstLumi = options.minInstLumi
 maxInstLumi = options.maxInstLumi
 inFile      = options.inputRunLumiInfo
 inNtuple    = options.inputNTupleFile
-
+outFile     = options.outFile
 f = TFile.Open(inNtuple)
 t = f.Get("trajTree")
 
@@ -94,31 +99,47 @@ timer = TStopwatch()
 timer.Start()
 
 # produce map of runs, ls, inst. lumi or int. lumi, and PU
-#lMaps = readLumiInfo(minRun, maxRun, minInstLumi, maxInstLumi, inFile)
-lMaps = readLumiInfo(314090, 316994, minInstLumi, maxInstLumi, 'run_ls_instlumi_pileup_2018_1.txt')
+lMaps = readLumiInfo(314090, maxRun, minInstLumi, maxInstLumi, inFile)
 #print lMaps.map_runls_instLumi_PU
-#print lMaps.map_run_totLumi_instLumi_avePU
+#print lMaps.map_run_totLumi
 print ('loading the lumi and PU maps ...')
 
-#exit()
+group_ch1D     = ['chL1', 'chL2', 'chL3', 'chL4', 'chD1', 'chD2', 'chD3']
+group_sizeX1D  = ['sXL1', 'sXL2', 'sXL3', 'sXL4', 'sXD1', 'sXD2', 'sXD3']
+group_sizeY1D  = ['sYL1', 'sYL2', 'sYL3', 'sYL4', 'sYD1', 'sYD2', 'sYD3']
+group_all1D    =  group_ch1D + group_sizeX1D + group_sizeY1D  
+
+histo1D = {}
+for subdet in group_all1D:
+    if 'ch' in subdet: histo1D[subdet] = TH1F(subdet, subdet, 70, 0.0, 120.0)
+    if 'X'  in subdet: histo1D[subdet] = TH1F(subdet, subdet, 20, 0.5, 20.5)
+    if 'Y'  in subdet: histo1D[subdet] = TH1F(subdet, subdet, 20, 0.5, 20.5)
+
 # declare maps of 2D histograms
-group_ch    = ['chL1VsIntlumi', 'chL2VsIntlumi', 'chL3VsIntlumi', 'chL4VsIntlumi', 'chD1VsIntlumi', 'chD2VsIntlumi', 'chD3VsIntlumi']
-group_sizeX = ['sXL1VsIntlumi', 'sXL2VsIntlumi', 'sXL3VsIntlumi', 'sXL4VsIntlumi', 'sXD1VsIntlumi', 'sXD2VsIntlumi', 'sXD3VsIntlumi']
-group_sizeY = ['sYL1VsIntlumi', 'sYL2VsIntlumi', 'sYL3VsIntlumi', 'sYL4VsIntlumi', 'sYD1VsIntlumi', 'sYD2VsIntlumi', 'sYD3VsIntlumi']
-group_all   = group_ch + group_sizeX + group_sizeY 
+group_ch    = ['chL1VsIntlumi', 'chL2VsIntlumi', 'chL3VsIntlumi', 'chL4VsIntlumi', 'chD1VsIntlumi', 'chD2VsIntlumi', 'chD3VsIntlumi',
+               'chL1VsInslumi', 'chL2VsInslumi', 'chL3VsInslumi', 'chL4VsInslumi', 'chD1VsInslumi', 'chD2VsInslumi', 'chD3VsInslumi']
+group_sizeX = ['sXL1VsIntlumi', 'sXL2VsIntlumi', 'sXL3VsIntlumi', 'sXL4VsIntlumi', 'sXD1VsIntlumi', 'sXD2VsIntlumi', 'sXD3VsIntlumi',
+               'sXL1VsInslumi', 'sXL2VsInslumi', 'sXL3VsInslumi', 'sXL4VsInslumi', 'sXD1VsInslumi', 'sXD2VsInslumi', 'sXD3VsInslumi']
+group_sizeY = ['sYL1VsIntlumi', 'sYL2VsIntlumi', 'sYL3VsIntlumi', 'sYL4VsIntlumi', 'sYD1VsIntlumi', 'sYD2VsIntlumi', 'sYD3VsIntlumi',
+               'sYL1VsInslumi', 'sYL2VsInslumi', 'sYL3VsInslumi', 'sYL4VsInslumi', 'sYD1VsInslumi', 'sYD2VsInslumi', 'sYD3VsInslumi']
+group_all   = group_ch + group_sizeX + group_sizeY
+
 
 histo = {}
 for subdet in group_all:
-    if 'ch' in subdet: histo[subdet] = TH2F(subdet, subdet, 20, 0.0, 20.0, 70, 0.0, 120.0)
-    if 'X'  in subdet: histo[subdet] = TH2F(subdet, subdet, 20, 0.0, 20.0, 20, 0.5, 20.5)
-    if 'Y'  in subdet: histo[subdet] = TH2F(subdet, subdet, 20, 0.0, 20.0, 20, 0.5, 20.5)
+    if 'ch' in subdet and 'Int' in subdet: histo[subdet] = TH2F(subdet, subdet, 30, 0.0, 35.0, 70, 0.0, 120.0)
+    if 'X'  in subdet and 'Int' in subdet: histo[subdet] = TH2F(subdet, subdet, 30, 0.0, 35.0, 20, 0.5, 20.5)
+    if 'Y'  in subdet and 'Int' in subdet: histo[subdet] = TH2F(subdet, subdet, 30, 0.0, 35.0, 20, 0.5, 20.5)
+    if 'ch' in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 25, 0.0, 25.0, 70, 0.0, 120.0)
+    if 'X'  in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 25, 0.0, 25.0, 20, 0.5, 20.5)
+    if 'Y'  in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 25, 0.0, 25.0, 20, 0.5, 20.5)
 
 # run over ntuple branch/leaves    
 nEventsAnalyzed = 0  
 for iev in xrange(t.GetEntries()):
     nEventsAnalyzed = nEventsAnalyzed + 1
     if iev % 100000 == 0: print 'event: ', iev
-    if iev == 10000: break 
+    #if iev == 1000: break 
     t.GetEntry(iev)
     run = getattr(t, 'event/run')
     ls  = getattr(t, 'event/ls')
@@ -140,8 +161,40 @@ for iev in xrange(t.GetEntries()):
     normChargeCuts = normCharge > 0 and normCharge < 120    
     normSizeXCuts  = normSizeX > 0.
     normSizeYCuts  = normSizeY > 0.
+
+    # Fill the 1D histograms
+    if layer1:
+        if normChargeCuts: histo1D['chL1'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXL1'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYL1'].Fill(normSizeY)
+        #print 'sizeX L1 : ', normSizeX, 'entry : ', iev
+    if layer2:
+        if normChargeCuts: histo1D['chL2'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXL2'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYL2'].Fill(normSizeY)
+        #print 'sizeX L2 : ', normSizeX, 'entry : ', iev
+    if layer3:
+        if normChargeCuts: histo1D['chL3'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXL3'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYL3'].Fill(normSizeY)
+    if layer4:
+        if normChargeCuts: histo1D['chL4'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXL4'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYL4'].Fill(normSizeY)
+    if disk1:
+        if normChargeCuts: histo1D['chD1'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXD1'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYD1'].Fill(normSizeY)
+    if disk2:
+        if normChargeCuts: histo1D['chD2'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXD2'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYD2'].Fill(normSizeY)
+    if disk3:
+        if normChargeCuts: histo1D['chD3'].Fill(normCharge)
+        if normSizeXCuts:  histo1D['sXD3'].Fill(normSizeX)
+        if normSizeYCuts:  histo1D['sYD3'].Fill(normSizeY)
+        
     
-   
     # inst lumi map: incredibly combersome :TANJA DO YOU HAVE A BETTER IDEA?
     '''
     for runls_m, inslumi_m, pu_m in lMaps.map_runls_instLumi_PU:
@@ -157,18 +210,53 @@ for iev in xrange(t.GetEntries()):
     for runls_m, inslumi_m, pu_m in lMaps.map_runls_instLumi_PU:
         run_m = int(str(runls_m)[0:6])
         if run_m <  minRun  or run_m >  maxRun : continue
-        #print 'runls : ', runls, 'runls in map : ', runls_m
         if runls  == runls_m:
-            keepEntry = 1
-            break
+            if layer1:
+                #print 'runls : ', runls, 'inst lumi :', inslumi_m, 'ch :',  normCharge
+                if normChargeCuts: histo['chL1VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXL1VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYL1VsInslumi'].Fill(inslumi_m, normSizeY)
+            if layer2:
+                if normChargeCuts: histo['chL2VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXL2VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYL2VsInslumi'].Fill(inslumi_m, normSizeY)
+            if layer3:
+                if normChargeCuts: histo['chL3VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXL3VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYL3VsInslumi'].Fill(inslumi_m, normSizeY)
+            if layer4:
+                if normChargeCuts: histo['chL4VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXL4VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYL4VsInslumi'].Fill(inslumi_m, normSizeY)
+            if disk1:
+                if normChargeCuts: histo['chD1VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXD1VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYD1VsInslumi'].Fill(inslumi_m, normSizeY)
+            if disk2:
+                if normChargeCuts: histo['chD2VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXD2VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYD2VsInslumi'].Fill(inslumi_m, normSizeY)
+            if disk3:
+                if normChargeCuts: histo['chD3VsInslumi'].Fill(inslumi_m, normCharge)
+                if normSizeXCuts:  histo['sXD3VsInslumi'].Fill(inslumi_m, normSizeX)
+                if normSizeYCuts:  histo['sYD3VsInslumi'].Fill(inslumi_m, normSizeY)
+                
+            if (inslumi_m > minInstLumi and inslumi_m < maxInstLumi) :
+                keepEntry = 1
+                break
+            
+    #print 'keep : ', keepEntry
     if keepEntry == 0: continue    
-   
+    
+    
     # integrated lumi map
-    for run_m, intlumi_m, inslumi_m, pu_m in lMaps.map_run_totLumi_instLumi_avePU:
+    for run_m, intlumi_m in lMaps.map_run_totLumi:
+        #print run_m, 'to be matched', maxRun
         if run_m < minRun or run_m > maxRun: continue
         if run == run_m:
             totlumi = intlumi_m/1000000. #(fb-1)
-            if layer1: 
+            if layer1:
+                #print 'lumi: ', totlumi, 'charge: ', normCharge
                 if normChargeCuts: histo['chL1VsIntlumi'].Fill(totlumi, normCharge)
                 if normSizeXCuts:  histo['sXL1VsIntlumi'].Fill(totlumi, normSizeX)
                 if normSizeYCuts:  histo['sYL1VsIntlumi'].Fill(totlumi, normSizeY)
@@ -198,8 +286,11 @@ for iev in xrange(t.GetEntries()):
                 if normSizeYCuts:  histo['sYD3VsIntlumi'].Fill(totlumi, normSizeY)
                 
 # Write the 2D plots to an output ROOT file
-f_out = TFile("2DHistos_"+str(minRun)+"_"+str(maxRun)+".root", "RECREATE")
+#f_out = TFile(inNtuple.replace('.root', '')+"_out.root", "RECREATE")
+f_out = TFile(outFile, "RECREATE")
 f_out.cd()
+for h in sorted(histo1D):
+    histo1D[h].Write()
 for h in sorted(histo):
     histo[h].Write()
 f_out.Close()
