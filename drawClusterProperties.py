@@ -139,7 +139,7 @@ nEventsAnalyzed = 0
 for iev in xrange(t.GetEntries()):
     nEventsAnalyzed = nEventsAnalyzed + 1
     if iev % 100000 == 0: print 'event: ', iev
-    #if iev == 1000: break 
+    if iev == 10000: break 
     t.GetEntry(iev)
     run = getattr(t, 'event/run')
     ls  = getattr(t, 'event/ls')
