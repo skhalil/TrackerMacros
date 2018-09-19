@@ -67,7 +67,7 @@ def drawLabels(lumiType):
     
     lw.DrawLatex(0.12, 0.91, 'CMS')
     le.DrawLatex(0.66, 0.91, '#bf{#sqrt{s} = 13 TeV}')
-    lp.DrawLatex(0.24, 0.91, '')#Preliminary 2018')
+    lp.DrawLatex(0.24, 0.91, 'Internal 2018')#Preliminary 2018')
 
 def gPadSet():
     gPad.SetTickx(1)
@@ -291,7 +291,8 @@ for h in range(0, 3):#len(h_2D_ch)
     n =  h_2D_ch[h].GetName()
     if 'ch' in n:
         aSlices = TObjArray()
-        fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 120, 0, "QNR", aSlices)
+        h_fit[h].SetRange(8, 60)
+        fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 100, 0, "QNR", aSlices)
         aSlices[1].GetYaxis().SetRangeUser(12., 22.)
         h_sliceY.append(aSlices[1])
         
@@ -323,7 +324,8 @@ for h in range(3, len(h_2D_ch)):
     n =  h_2D_ch[h].GetName()
     if 'ch' in n:
         aSlices = TObjArray()
-        fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 120, 0, "QNR", aSlices)
+        h_fit[h].SetRange(8, 60)
+        fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 100, 0, "QNR", aSlices)
         aSlices[1].GetYaxis().SetRangeUser(12., 28.)
         h_sliceY.append(aSlices[1])
         
