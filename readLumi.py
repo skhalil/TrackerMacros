@@ -11,6 +11,8 @@
 
 #!/usr/bin/env python
 import os, sys
+import numpy as np
+from ROOT import TH2F, TFile
 
 
 class readLumiInfo:
@@ -51,8 +53,8 @@ class readLumiInfo:
                     #if not (float(instl_B)/23.3104 < minInstLumi or float(instl_B)/23.3104 > maxInstLumi):
                     runsls = float(run_B) * 100000 + float(ls_B) # first six digits as run number and last five as lumi-sections
                     runls_list.append(runsls)
-                    instls_list.append( round(float(instl_B)/23.3104, 4) )
-                    puls_list.append( round(float(pileup_B), 4) )
+                    instls_list.append( float(instl_B)/23.3104)
+                    puls_list.append( float(pileup_B) )
                     
                     totLumi =  totLumi + float(instl_B) #in nb
                     totPileup = totPileup + float(pileup_B)
@@ -64,25 +66,62 @@ class readLumiInfo:
             # prepare the lists
             if count != 0 :         
                 if run_A == str(maxRun): print '{0:<6} {1:<12.3f} {2:<6.3f} {3:<6.3f}'.format(run_A, totLumi/1000000., totInstLumi/float(count), totPileup/float(count) )
-                ave_instl.append(round(totInstLumi/float(count), 4))
-                ave_pu.append(round(totPileup/float(count), 4))
+                ave_instl.append(totInstLumi/float(count))
+                ave_pu.append(totPileup/float(count))
             elif totLumi != 0.0:
                 if run_A == str(maxRun): print '{0:<6} {1:<12.3f} {2:<6.3f} {3:<6.3f}'.format(run_A, totLumi/1000000., 0., 0. )
                 ave_instl.append(0.0)
                 ave_pu.append(0.0)
 
             run_list.append(int(run_A))
-            tot_lumi.append(round(totLumi, 3))
-        #print 'len runls: ', len(runls_list), 'len instls: ', len(instls_list), 'len puls: ', len(puls_list), 'len integ lumi: ', len(tot_lumi)
+            tot_lumi.append(totLumi)
+        print 'len runls: ', len(runls_list), 'len instls: ', len(instls_list), 'len puls: ', len(puls_list), 'len integ lumi per event: ', len(tot_lumi)
         
-        map_runls_instLumi_PU = zip(runls_list, instls_list, puls_list)
-        map_run_totLumi = zip (run_list, tot_lumi)
-        self.map_runls_instLumi_PU    = map_runls_instLumi_PU
-        self.map_run_totLumi          = map_run_totLumi
-       
-       
+        
+        map_runls_instLumi_PU           = zip(runls_list, instls_list, puls_list)
+        map_run_totLumi                 = zip(run_list, tot_lumi)        
+        self.map_runls_instLumi_PU      = map_runls_instLumi_PU
+        self.map_run_totLumi            = map_run_totLumi
+
+        total_lumi = []
+        for runls_m, instlumi_m, pu_m in map_runls_instLumi_PU:
+            for run_m, totlumi_m in map_run_totLumi:
+                if int(str(runls_m)[0:6]) == run_m:
+                    total_lumi.append(totlumi_m/1000000)
+        print 'size of total lumi', len(total_lumi)            
+
+        map_runls_instLumi_intLumi_PU = zip(runls_list, instls_list, total_lumi, puls_list)
+        self.map_runls_instLumi_intLumi_PU = map_runls_instLumi_intLumi_PU
+        #print map_runls_instLumi_intLumi_PU 
 ## Test it! #######            
-#x = readLumiInfo(314090, 317650, 0.0, 1000.0, 'run_ls_instlumi_pileup_2018.txt')
+#lMaps = readLumiInfo(314090, 317696, 0.0, 1000.0, 'run_ls_instlumi_pileup_2018.txt')###
+#lMaps = readLumiInfo(316715, 316716, 0.0, 1000.0, 'run_ls_instlumi_pileup_2018.txt')
+lMaps = readLumiInfo(314090, 326483, 0.0, 1000.0, 'run_ls_instlumi_pileup_2018_all.txt')#315782
+a = []
+for item in lMaps.map_runls_instLumi_intLumi_PU:
+    #print item[0]
+    a.append([item[0], item[1], item[2], item[3]])
+    #b.append(item[1])
+    #print a
+atest = np.array(a)
+print atest
+print atest.shape
+
+np.save('lumiarray.npy', atest)
+
+# map of inst lumi vs integrated lumi
+#hist = TH2F('InstVsInt', 'InstVsInt', 30, 0.0, 35.0, 25, 0.0, 25.0)
+#hist.GetXaxis().SetTitle('Integrated Lumi (fb^{-1})')
+#hist.GetYaxis().SetTitle('Instantaneous Lumi (nb^{-1} s^{-1})')
+#for runls_m, instlumi_m, pu_m in lMaps.map_runls_instLumi_PU:
+#    for run_m, totlumi_m in lMaps.map_run_totLumi:
+#        if int(str(runls_m)[0:6]) == run_m:
+#            hist.Fill(totlumi_m/1000000., instlumi_m)
+            #print 'totlumi',   totlumi_m/1000000., 'inst lumi', instlumi_m
+#f_out = TFile('lumiMap.root', "RECREATE")
+#hist.Write()
+#f_out.Close()
+
 #print x.map_runls_instLumi_PU
 #print x.map_run_totLumi
 
@@ -97,3 +136,6 @@ for item in  x.map_run_totLumi_instLumi_avePU:
     print>>thefile1, item  
 '''  
 #####################
+#thefile = open('map_runls_instLumi_intLumi_PU.txt', 'w')
+#for item in lMaps.map_runls_instLumi_intLumi_PU:
+#    print>>thefile, item

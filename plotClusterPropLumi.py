@@ -2,7 +2,7 @@
 import os, sys, math, array, operator
 from ROOT import gROOT, TFile, TF1, gPad, gStyle, gDirectory, TTree, TCanvas, TH1F, TH2F, TH1D, TProfile, TObjArray, TStopwatch, TGaxis, TLegend, TLatex
 from ROOT import kBlack, kGreen, kOrange, kGreen, kMagenta, kRed, kBlue, kTeal, kPink, kViolet, kCyan, kTRUE
-from readLumi import readLumiInfo
+#from readLumi import readLumiInfo
 gROOT.ProcessLine('.L ./fitting.C')
 #gROOT.SetBatch(True)
 from ROOT import fitting
@@ -67,7 +67,7 @@ def drawLabels(lumiType):
     
     lw.DrawLatex(0.12, 0.91, 'CMS')
     le.DrawLatex(0.66, 0.91, '#bf{#sqrt{s} = 13 TeV}')
-    lp.DrawLatex(0.24, 0.91, 'Internal 2018')#Preliminary 2018')
+    lp.DrawLatex(0.24, 0.91, 'Preliminary 2018')#Preliminary 2018')
 
 def gPadSet():
     gPad.SetTickx(1)
@@ -88,15 +88,15 @@ from optparse import OptionParser
 parser = OptionParser()
 
 parser.add_option('--plotDir', metavar='P', type='string', action='store',
-                  default='Plots/', 
+                  default='PlotsDec/', 
                   dest='plotDir',
                   help='output directory of plots')
 parser.add_option('--slicePerInstLumi', metavar='S', action='store_true',
-                  default=True, 
+                  default=False, 
                   dest='slicePerInstLumi',
                   help='output directory of plots')
 parser.add_option('--lumiRange', metavar='I', type='string', action='store',
-                  default='13-15', 
+                  default='', 
                   dest='lumiRange',
                   help='inst. lumi. range')                                            
 parser.add_option('--runList', metavar='l', type='string', action='callback', callback = runs,
@@ -104,11 +104,11 @@ parser.add_option('--runList', metavar='l', type='string', action='callback', ca
                   dest='runList',
                   help='run list')
 parser.add_option('--lumiType', metavar='L', type='string', action='store',
-                  default='int', #int #ins 
+                  default='ins', #int #ins 
                   dest='lumiType',
                   help='plot cluster property as function of inst. lumi or integ. lumi')
 parser.add_option('--inFile', metavar='F', type='string', action='store',
-                  default='ROOT/intLumi13to15/Fill/out_fill_all.root', #out_317696.root',
+                  default='ROOT/New/out_all.root', #out_317696.root',
                   dest='inFile',
                   help='input file')
 parser.add_option('--fill', metavar='F', type='string', action='store',
@@ -291,7 +291,7 @@ for h in range(0, 3):#len(h_2D_ch)
     n =  h_2D_ch[h].GetName()
     if 'ch' in n:
         aSlices = TObjArray()
-        h_fit[h].SetRange(8, 60)
+        h_fit[h].SetRange(10, 50)
         fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 100, 0, "QNR", aSlices)
         aSlices[1].GetYaxis().SetRangeUser(12., 22.)
         h_sliceY.append(aSlices[1])
@@ -324,7 +324,7 @@ for h in range(3, len(h_2D_ch)):
     n =  h_2D_ch[h].GetName()
     if 'ch' in n:
         aSlices = TObjArray()
-        h_fit[h].SetRange(8, 60)
+        h_fit[h].SetRange(10, 50)
         fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 100, 0, "QNR", aSlices)
         aSlices[1].GetYaxis().SetRangeUser(12., 28.)
         h_sliceY.append(aSlices[1])
