@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, sys, math, array, operator
-from ROOT import gROOT, TFile, TF1, gPad, gStyle, gDirectory, TTree, TCanvas, TH1F, TH2F, TH1D, TProfile, TObjArray, TStopwatch, TGaxis, TLegend, TLatex
-from ROOT import kBlack, kGreen, kOrange, kGreen, kMagenta, kRed, kBlue, kTeal, kPink, kViolet, kCyan, kTRUE
+from ROOT import gROOT, TFile, TF1, gPad, gStyle, gDirectory, TTree, TCanvas, TH1F, TH2F, TH1D, TProfile, TObjArray, TStopwatch, TGaxis, TLegend, TLatex, THStack
+from ROOT import kBlack, kYellow, kGreen, kOrange, kGreen, kMagenta, kRed, kBlue, kTeal, kPink, kViolet, kCyan, kTRUE
 #from readLumi import readLumiInfo
 gROOT.ProcessLine('.L ./fitting.C')
 #gROOT.SetBatch(True)
@@ -92,19 +92,23 @@ parser.add_option('--plotDir', metavar='P', type='string', action='store',
                   dest='plotDir',
                   help='output directory of plots')
 parser.add_option('--slicePerInstLumi', metavar='S', action='store_true',
-                  default=False, 
+                  default=True, 
                   dest='slicePerInstLumi',
                   help='output directory of plots')
-parser.add_option('--lumiRange', metavar='I', type='string', action='store',
-                  default='', 
-                  dest='lumiRange',
-                  help='inst. lumi. range')                                            
+parser.add_option('--sliceDir', metavar='F', type='string', action='store',
+                  default='inslumi13to15', 
+                  dest='sliceDir',
+                  help='ins lumi subdir 6to8,  8to10, 11to13, 13to15')
+#parser.add_option('--lumiRange', metavar='I', type='string', action='store',
+#                  default='', 
+#                  dest='lumiRange',
+#                  help='inst. lumi. range')                                            
 parser.add_option('--runList', metavar='l', type='string', action='callback', callback = runs,
                   default= '317648, 317649, 317650',
                   dest='runList',
                   help='run list')
 parser.add_option('--lumiType', metavar='L', type='string', action='store',
-                  default='ins', #int #ins 
+                  default='int', #int #ins 
                   dest='lumiType',
                   help='plot cluster property as function of inst. lumi or integ. lumi')
 parser.add_option('--inFile', metavar='F', type='string', action='store',
@@ -121,8 +125,9 @@ parser.add_option('--fill', metavar='F', type='string', action='store',
 plotdir     = options.plotDir
 inFile      = options.inFile
 sliceL      = options.slicePerInstLumi
-lumiRange   = options.lumiRange
+#lumiRange   = options.lumiRange
 lumiType    = options.lumiType
+sliceDir    = options.sliceDir
 runList     = options.runList.split(',')
 fill        = options.fill
 
@@ -135,9 +140,25 @@ group_sizeX1D  = ['sXL1', 'sXL2', 'sXL3', 'sXL4', 'sXD1', 'sXD2', 'sXD3']
 group_sizeY1D  = ['sYL1', 'sYL2', 'sYL3', 'sYL4', 'sYD1', 'sYD2', 'sYD3']
 group_all1D    =  group_ch1D + group_sizeX1D + group_sizeY1D  
 
-group_ch2D_int    = ['chL1VsIntlumi', 'chL2VsIntlumi', 'chL3VsIntlumi', 'chL4VsIntlumi', 'chD1VsIntlumi', 'chD2VsIntlumi', 'chD3VsIntlumi']               
-group_sizeX2D_int = ['sXL1VsIntlumi', 'sXL2VsIntlumi', 'sXL3VsIntlumi', 'sXL4VsIntlumi', 'sXD1VsIntlumi', 'sXD2VsIntlumi', 'sXD3VsIntlumi']
-group_sizeY2D_int = ['sYL1VsIntlumi', 'sYL2VsIntlumi', 'sYL3VsIntlumi', 'sYL4VsIntlumi', 'sYD1VsIntlumi', 'sYD2VsIntlumi', 'sYD3VsIntlumi']
+if sliceL==True :
+    if '13to15' in sliceDir:
+        InsSlice='13to15lumi'
+        lumiRange='13-15'
+    elif '11to13' in sliceDir:
+        InsSlice='11to13lumi'
+        lumiRange='11-13'
+    elif '8to10' in sliceDir:
+        InsSlice='8to10lumi'
+        lumiRange='8-10'
+    elif '6to8' in sliceDir:
+        InsSlice='6to8lumi'
+        lumiRange='6-8'      
+    else:
+        InsSlice = 'lumi'
+        lumiRange=''
+group_ch2D_int    = ['chL1VsInt'+InsSlice, 'chL2VsInt'+InsSlice, 'chL3VsInt'+InsSlice, 'chL4VsInt'+InsSlice, 'chD1VsInt'+InsSlice, 'chD2VsInt'+InsSlice, 'chD3VsInt'+InsSlice]               
+group_sizeX2D_int = ['sXL1VsInt'+InsSlice, 'sXL2VsInt'+InsSlice, 'sXL3VsInt'+InsSlice, 'sXL4VsInt'+InsSlice, 'sXD1VsInt'+InsSlice, 'sXD2VsInt'+InsSlice, 'sXD3VsInt'+InsSlice]
+group_sizeY2D_int = ['sYL1VsInt'+InsSlice, 'sYL2VsInt'+InsSlice, 'sYL3VsInt'+InsSlice, 'sYL4VsInt'+InsSlice, 'sYD1VsInt'+InsSlice, 'sYD2VsInt'+InsSlice, 'sYD3VsInt'+InsSlice]
 group_all2D_int   = group_ch2D_int + group_sizeX2D_int + group_sizeY2D_int
 
 group_ch2D_ins    = ['chL1VsInslumi', 'chL2VsInslumi', 'chL3VsInslumi', 'chL4VsInslumi', 'chD1VsInslumi', 'chD2VsInslumi', 'chD3VsInslumi']               
@@ -149,7 +170,7 @@ histo2D = {}
 
 if lumiType == 'int':
     for subdet in group_all2D_int:
-        histo2D[subdet] = f.Get(subdet)
+        histo2D[subdet] = f.Get(sliceDir+"/"+subdet)
 elif lumiType == 'ins':
     for subdet in group_all2D_ins:
         histo2D[subdet] = f.Get(subdet)    
@@ -172,9 +193,12 @@ sYMaxYRange = 0
 
 
 for h in sorted(histo2D):
-    if lumiType == 'int': newN =  histo2D[h].GetName().replace('VsIntlumi', '')
+    if lumiType == 'int':
+        #print histo2D[h].GetName()
+        newN =  histo2D[h].GetName().replace('VsIntlumi', '')
     elif lumiType == 'ins': newN =  histo2D[h].GetName().replace('VsInslumi', '')   
     hist2D = histo2D[h].Clone()
+    hist2D.RebinX(2)
     histY = hist2D.ProjectionY()
     histY.SetName(newN)
     # charge
@@ -182,8 +206,12 @@ for h in sorted(histo2D):
         if   lumiType == 'int': setHisto(hist2D, "Integrated Luminosity (fb^{-1})", "Norm. on-trk. charge (ke)", 1)
         elif lumiType == 'ins': setHisto(hist2D, "Instantaneous Luminosity (#times10^{33}cm^{-2}s^{-1})", "Norm. on-trk. charge (ke)", 1)
         setHisto(histY, "Norm. on-trk. charge (ke)", "events", 0)
-        h_fit.append(fitting(histY))       
+        h_fit.append(fitting(histY))
         h_1D_ch.append(histY)
+        if 'L1' in newN:
+            histY.Draw("hist")
+            h_fit[3].Draw("same")
+            raw_input('freez ...')
         h_2D_ch.append(hist2D)
         if histY.GetMaximum() > chMaxYRange: chMaxYRange = histY.GetMaximum()
     # sizeX     
@@ -312,23 +340,126 @@ legD.Draw()
 c_ch_d_MP_intL.RedrawAxis()
 gPadSet()
 
-if   lumiType == 'int': c_ch_d_MP_intL.SaveAs(plotdir+"ch2D_disk_Int_Run_all.pdf")
+if   lumiType == 'int': c_ch_d_MP_intL.SaveAs(plotdir+"ch2D_disk_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_ch_d_MP_intL.SaveAs(plotdir+"ch2D_disk_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_ch_d_MP_intL.SaveAs(plotdir+"ch2D_disk_Ins_Run_all.pdf")
 
 raw_input('wait a bit ...')
 
-c_ch_b_MP_intL = TCanvas('c_ch_b_MP_intL', 'c_ch_b_MP_intL', 700, 800)
+
 #c_ch_b_MP_intL.SetGrid()
+ymax=0
 for h in range(3, len(h_2D_ch)):
     n =  h_2D_ch[h].GetName()
     if 'ch' in n:
         aSlices = TObjArray()
-        h_fit[h].SetRange(10, 50)
-        fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 100, 0, "QNR", aSlices)
+           
+        h_fit[h].SetRange(11, 50)
+        if h==3:
+            fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 24, 20, "R", aSlices) #QNR
+        else:
+            fitS = h_2D_ch[h].FitSlicesY(h_fit[h], 0, 24, 20, "QNR", aSlices) 
+        print aSlices[0], aSlices[1], aSlices[2], aSlices[3]
         aSlices[1].GetYaxis().SetRangeUser(12., 28.)
         h_sliceY.append(aSlices[1])
         
+        if h==3:
+            print 'fitS', fitS
+            hL1bins=[]
+            hL1_par0=[]
+            hL1_par1=[]
+            hL1_par2=[]
+            hL1_par3=[]
+            #hs = THStack("projY", "")
+            for i in range(2, 12):
+                h_temp = h_2D_ch[h].ProjectionY("bin"+str(i+1), i+1, i+2)
+                if h_temp.GetMaximum() > ymax: ymax = h_temp.GetMaximum() 
+                hL1bins.append(h_temp)
+                hL1_par0.append(aSlices[0])
+                hL1_par1.append(aSlices[1])
+                hL1_par2.append(aSlices[2])
+                hL1_par3.append(aSlices[3])
+                #hs.Add(h_2D_ch[h].ProjectionY("bin"+str(i+1), i+1, i+2))
+            #hs.Draw("Hist")
+            
+              
+print  hL1bins, hL1_par0
+print  ymax
+ch_L1_Leg = TLegend(0.70,0.88,0.82,0.60) #580.70,0.88,0.82,0.70)
+ch_L1_Leg.SetTextSize(0.035)
+ch_L1_Leg.SetBorderSize(0)
+ch_L1_Leg.SetFillColor(10)
+ch_L1_Leg.SetLineColor(10)
+ch_L1_Leg.SetLineWidth(0)
+
+c_L1_a = TCanvas('c_L1_a', 'c_L1_a', 1000, 500)
+c_L1_a.Divide(2,1)
+c_L1_a.cd(1)
+h_2D_ch[3].Draw("colz")
+
+c_L1_a.cd(2)
+c_j=0
+for h_j in reversed(hL1bins):    
+    print h_j.GetName(), 'area:', h_j.Integral()
+    if c_j <= 4:
+        h_j.SetLineColor(kRed+c_j)
+    elif c_j > 4:
+        h_j.SetLineColor(kGreen-c_j)
+    ch_L1_Leg.AddEntry(h_j, h_j.GetName(), "L")
+    #h_j.SetMaximum(ymax*(1.10))
+    #h_j.SetMaximum(1.20)
+    h_j.DrawNormalized("hist,same")
+    c_j+=1
+    
+ch_L1_Leg.Draw()
+c_L1_a.RedrawAxis()
+gPadSet()
+
+
+c_L1_b = TCanvas('c_L1', 'c_L1', 1000, 1000)
+c_L1_b.Divide(2,2)
+c_L1_b.cd(1)
+
+for h_p0 in reversed(hL1_par0):
+    h_p0.SetMarkerColor(kRed)
+    h_p0.SetMarkerStyle(20)
+    h_p0.SetMarkerSize(0.6)
+    h_p0.SetMinimum(1.8)
+    h_p0.Draw()
+    
+c_L1_b.cd(2)    
+for h_p1 in reversed(hL1_par1):
+    h_p1.SetMarkerColor(kRed)
+    h_p1.SetMarkerStyle(20)
+    h_p1.SetMarkerSize(0.6)
+    h_p1.Draw()
+    
+c_L1_b.cd(3)    
+for h_p2 in reversed(hL1_par2):
+    h_p2.SetMarkerColor(kRed)
+    h_p2.SetMarkerStyle(20)
+    h_p2.SetMarkerSize(0.6)
+    h_p2.Draw()
+
+c_L1_b.cd(4)    
+for h_p3 in reversed(hL1_par3):
+    h_p3.SetMarkerColor(kRed)
+    h_p3.SetMarkerStyle(20)
+    h_p3.SetMarkerSize(0.6)
+    h_p3.SetMinimum(4)
+    h_p3.Draw()    
+
+#ch_L1_Leg.Draw()
+c_L1_b.RedrawAxis()
+gPadSet()
+
+if   lumiType == 'int':
+    c_L1_a.SaveAs(plotdir+"chL1_Int_"+InsSlice+"_Run_all.pdf")
+    c_L1_b.SaveAs(plotdir+"chL1_Parm_Int_"+InsSlice+"_Run_all.pdf")
+raw_input('freez ...')
+
+c_ch_b_MP_intL = TCanvas('c_ch_b_MP_intL', 'c_ch_b_MP_intL', 700, 800)
+
 hSliceYbColorMap = zip(h_sliceY[3:7], lsColor[3:7], lsMarker[3:7])
 
 for h, c, m in hSliceYbColorMap:
@@ -346,7 +477,7 @@ legL.Draw()
 c_ch_b_MP_intL.RedrawAxis()
 gPadSet()
 
-if   lumiType == 'int': c_ch_b_MP_intL.SaveAs(plotdir+"ch2D_barrel_Int_Run_all.pdf")
+if   lumiType == 'int': c_ch_b_MP_intL.SaveAs(plotdir+"ch2D_barrel_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_ch_b_MP_intL.SaveAs(plotdir+"ch2D_barrel_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_ch_b_MP_intL.SaveAs(plotdir+"ch2D_barrel_Ins_Run_all.pdf")
 
@@ -369,7 +500,7 @@ legD.Draw()
 gPadSet()
 
 c_sX_d_intL.RedrawAxis()
-if   lumiType == 'int': c_sX_d_intL.SaveAs(plotdir+"sX2D_disk_Int_Run_all.pdf")
+if   lumiType == 'int': c_sX_d_intL.SaveAs(plotdir+"sX2D_disk_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_sX_d_intL.SaveAs(plotdir+"sX2D_disk_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_sX_d_intL.SaveAs(plotdir+"sX2D_disk_Ins_Run_all.pdf")
 
@@ -389,7 +520,7 @@ legL.Draw()
 gPadSet()
 
 c_sX_b_intL.RedrawAxis()
-if   lumiType == 'int': c_sX_b_intL.SaveAs(plotdir+"sX2D_barrel_Int_Run_all.pdf")
+if   lumiType == 'int': c_sX_b_intL.SaveAs(plotdir+"sX2D_barrel_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_sX_b_intL.SaveAs(plotdir+"sX2D_barrel_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_sX_b_intL.SaveAs(plotdir+"sX2D_barrel_Ins_Run_all.pdf")
 
@@ -413,7 +544,7 @@ legD.Draw()
 gPadSet()
 
 c_sY_d_intL.RedrawAxis()
-if   lumiType == 'int': c_sY_d_intL.SaveAs(plotdir+"sXYD_disk_Int_Run_all.pdf")
+if   lumiType == 'int': c_sY_d_intL.SaveAs(plotdir+"sXYD_disk_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_sY_d_intL.SaveAs(plotdir+"sY2D_disk_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_sY_d_intL.SaveAs(plotdir+"sY2D_disk_Ins_Run_all.pdf")
 
@@ -433,7 +564,7 @@ legL.Draw()
 gPadSet()
 
 c_sY_b_intL.RedrawAxis()
-if   lumiType == 'int': c_sY_b_intL.SaveAs(plotdir+"sY2D_barrel_Int_Run_all.pdf")
+if   lumiType == 'int': c_sY_b_intL.SaveAs(plotdir+"sY2D_barrel_Int_"+InsSlice+"_Run_all.pdf")
 elif lumiType == 'ins' and fill != '': c_sY_b_intL.SaveAs(plotdir+"sY2D_barrel_Ins_Fill_"+fill+".pdf")
 elif lumiType == 'ins' and fill == '': c_sY_b_intL.SaveAs(plotdir+"sY2D_barrel_Ins_Run_all.pdf")
 

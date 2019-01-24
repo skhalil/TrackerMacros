@@ -2,7 +2,7 @@
 import os, sys, math, array, operator
 from ROOT import gROOT, TFile, TF1, gPad, gStyle, gDirectory, TTree, TCanvas, TH1F, TH2F, TH1D, TProfile, TObjArray, TStopwatch, TGaxis, TLegend, TLatex
 from ROOT import kBlack, kGreen, kOrange, kGreen, kMagenta, kRed, kBlue, kTeal, kPink, kViolet, kCyan, kTRUE
-from readLumi import readLumiInfo
+#from readLumi import readLumiInfo
 gROOT.ProcessLine('.L ./fitting.C')
 #gROOT.SetBatch(True)
 from ROOT import fitting
@@ -37,7 +37,7 @@ def setLeg(histo, legText, color):
 
 def setColor(histo, color, marker):
     histo.SetLineColor(color)
-    #legD.SetTextColor(color)
+    #histo.SetMarkerSize(0.5)
     #histo.SetMarkerStyle(marker)
     histo.SetMarkerColor(color)
     
@@ -60,7 +60,7 @@ def setHisto(histo, xTitle, yTitle, D2):
     ##histo.GetXaxis().SetTickSize(0.02)
     histo.SetLineWidth(2)
     #if D2:
-        ##histo.SetMarkerStyle(7)
+        #histo.SetMarkerStyle(7)
         #histo.SetMarkerSize(0.2)
         #histo.GetXaxis().SetNdivisions(510)
         #histo.GetYaxis().SetNdivisions(510)
@@ -157,11 +157,11 @@ from optparse import OptionParser
 parser = OptionParser()
 
 parser.add_option('--plotDir', metavar='P', type='string', action='store',
-                  default='Plots/', 
+                  default='Plots_RelVal/', 
                   dest='plotDir',
                   help='output directory of plots')
 parser.add_option('--slicePerInstLumi', metavar='S', action='store_true',
-                  default=True, 
+                  default=False, 
                   dest='slicePerInstLumi',
                   help='output directory of plots')
 parser.add_option('--lumiRange', metavar='I', type='string', action='store',
@@ -169,7 +169,7 @@ parser.add_option('--lumiRange', metavar='I', type='string', action='store',
                   dest='lumiRange',
                   help='inst. lumi. range')
 parser.add_option('--inFile', metavar='F', type='string', action='store',
-                  default='ROOT/intLumi13to15/Fill/out_fill_6648_6759.root',#ROOT/out_317661.root',#ROOT/out_317626.root,317626, 317661, 
+                  default='ROOT/New/RelVal/out_RelVal_all.root',#'ROOT/intLumi13to15/History/out_all.root',#ROOT/out_317661.root',#ROOT/out_317626.root,317626, 317661, 
                   dest='inFile',
                   help='input file')
 
@@ -270,6 +270,7 @@ for h in sorted(histo1D):
         h_1D_sY.append(hist1D)       
         if hist1D.GetMaximum() > sYMaxYRange: sYMaxYRange = hist1D.GetMaximum()
 
+       
      
 lsColor   = [kRed+1, kMagenta+2, kBlue+1, kRed+1, kMagenta+2, kBlue+1, kCyan+1]
 lsMarker  = [20, 21, 22, 24, 28, 29, 27 ]
@@ -285,10 +286,28 @@ for h, c, m in h1DSXColorMap:
 for h, c, m in h1DSYColorMap:
     setColor(h,c,m)
 
+
 h1DChFitColorMap = zip(h_fit, lsColor, lsMarker)
 for h, c, m in h1DChFitColorMap:
     setColor(h,c,m)
 
+#lb = TLatex()
+#lb.SetNDC(kTRUE)
+#lb.SetTextSize(0.04)
+
+#c = TCanvas('c', 'c')
+#h_dummy = fix_frame(h_1D_ch[0], 0.18, 80.0)
+#h_dummy.Draw()
+#h_1D_ch[0].DrawNormalized("hist")
+
+#fit_hist = h_fit[0].GetHistogram()
+#fit_hist.Sumw2()
+#fit_hist.Scale(1./h_1D_ch[0].GetEntries())
+#fit_hist.Draw("l hist same")
+#setLabels(h_1D_ch[0], h_fit[0], lsColor)
+#raw_input("AAA")
+#exit()
+    
 # ------------------    
 lb = TLatex()
 lb.SetNDC(kTRUE)
@@ -300,12 +319,21 @@ c_ch_d = TCanvas('c_ch_d', 'c_ch_d')
 #c_ch_d.SetGrid()
 h_dummy = fix_frame(h_1D_ch[0], 0.18, 80.0)
 h_dummy.Draw()
-for h in range(0,3): 
-    fit_hist = h_fit[h].GetHistogram()
-    fit_hist.Scale(1./h_1D_ch[h].GetEntries())
-    h_1D_ch[h].DrawNormalized("same hist")
-    fit_hist.Draw("lsame")   
-    setLabels(h_1D_ch[h], h_fit[h], lsColor)
+for i in range(0,3):#3
+    #h_1D_ch[i].SetMinimum(0.01)
+    #h_1D_ch[i].GetXaxis().SetRange(0, 70)
+    #scale = h_1D_ch[i].Integral()/h_1D_ch[i].GetMaximum()
+    fit_hist = h_fit[i].GetHistogram()
+    fit_hist.Sumw2()
+    fit_hist.Scale(1./h_1D_ch[i].GetEntries())
+    fit_hist.SetMarkerSize(2)
+    fit_hist.SetLineWidth(2)
+    #h_1D_ch[h].SetMaximum(1.20)
+    
+    h_1D_ch[i].DrawNormalized("same hist")
+    fit_hist.Draw("l hist same")
+    setLabels(h_1D_ch[i], h_fit[i], lsColor)
+    
        
 drawLabels(sliceL)        
 legDCh.Draw()
@@ -315,17 +343,20 @@ gPadSet()
 if sliceL: c_ch_d.SaveAs(plotdir+"ch1D_InstLumi_disk_"+lumiRange.replace('-','to')+"_Run_"+RUN+".pdf") 
 else: c_ch_d.SaveAs(plotdir+"ch1D_disk_Run_"+RUN+".pdf")
 
-#raw_input('press any key to continue ...')
+raw_input('press any key to continue ...')
 
 c_ch_b = TCanvas('c_ch_b', 'c_ch_b')
-h_dummy = fix_frame(h_1D_ch[3], 0.16, 100.0)
+h_dummy = fix_frame(h_1D_ch[3], 0.20, 100.0)
 h_dummy.Draw()
-for h in range(3,len(h_1D_ch)):
-    fit_hist = h_fit[h].GetHistogram()
-    fit_hist.Scale(1./h_1D_ch[h].GetEntries())
-    h_1D_ch[h].DrawNormalized("same hist")
-    fit_hist.Draw("lsame")
-    setLabels(h_1D_ch[h], h_fit[h], lsColor)
+for i in range(3,len(h_1D_ch)):
+    fit_hist = h_fit[i].GetHistogram()
+    fit_hist.Sumw2()
+    fit_hist.Scale(1./h_1D_ch[i].GetEntries())
+    fit_hist.SetMarkerSize(2)
+    fit_hist.SetLineWidth(2)
+    h_1D_ch[i].DrawNormalized("same hist")
+    fit_hist.Draw("l hist same")
+    setLabels(h_1D_ch[i], h_fit[i], lsColor)
 
 drawLabels(sliceL)         
 legLCh.Draw()
@@ -335,7 +366,7 @@ gPadSet()
 if sliceL: c_ch_b.SaveAs(plotdir+"ch1D_InstLumi_barrel_"+lumiRange.replace('-','to')+"_Run_"+RUN+".pdf") 
 else: c_ch_b.SaveAs(plotdir+"ch1D_barrel_Run_"+RUN+".pdf")
 
-#raw_input('press any key to continue ...')
+raw_input('press any key to continue ...')
 
 # ----------------------------------------------
 # Plot sizeX
@@ -355,10 +386,10 @@ gPadSet()
 if sliceL: c_sX_d.SaveAs(plotdir+"sX1D_InstLumi_disk_"+lumiRange.replace('-','to')+"_Run_"+RUN+".pdf") 
 else: c_sX_d.SaveAs(plotdir+"sX1D_disk_Run_"+RUN+".pdf")
 
-#raw_input('press any key to continue ...')
+raw_input('press any key to continue ...')
 
 c_sX_b = TCanvas('c_sX_b', 'c_sX_b')
-h_dummy = fix_frame(h_1D_sX[3], 0.7, 10.0)
+h_dummy = fix_frame(h_1D_sX[3], 0.9, 10.0)
 h_dummy.Draw()
 for h in range(3, len(h_1D_sX)):
     h_1D_sX[h].DrawNormalized("same hist")
@@ -372,7 +403,8 @@ gPadSet()
 if sliceL: c_sX_b.SaveAs(plotdir+"sX1D_InstLumi_barrel_"+lumiRange.replace('-','to')+"_Run_"+RUN+".pdf") 
 else: c_sX_b.SaveAs(plotdir+"sX1D_barrel_Run_"+RUN+".pdf")
 
-#raw_input('press any key to continue ...')
+raw_input('press any key to continue ...')
+
 # ----------------------------------------------
 # Plot sizeY
 # ----------------------------------------------
@@ -391,7 +423,7 @@ gPadSet()
 if sliceL: c_sY_d.SaveAs(plotdir+"sY1D_InstLumi_disk_"+lumiRange.replace('-','to')+"_Run_"+RUN+".pdf") 
 else: c_sY_d.SaveAs(plotdir+"sY1D_disk_Run_"+RUN+".pdf")
 
-#raw_input('press any key to continue ...')
+raw_input('press any key to continue ...')
 
 c_sY_b = TCanvas('c_sY_b', 'c_sY_b')
 h_dummy = fix_frame(h_1D_sY[3], 0.45, 20.0)

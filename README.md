@@ -3,6 +3,11 @@
 # readLumi.py
 A class that takes an input .txt file that is generated using brilcalc and has information of run, lumi section, inst. lumi, and pileup per lumi section. A class called readLumi.py produces desired maps of run, ls, inst. lumi, integ. lumi, and PU for a given run range
 
+The file lumiarray.npy is made using the input text file: run_ls_instlumi_pileup_2018_all.txt. 
+
+#openNumpy.py
+The script open the file lumiarray.npy, and trim the table in it to the desired run range, and produces another numpy array output file.
+
 # fitting.C
 A standalone macro to perform landau convoluted with gaussian fit to the cluster charge distribution
 

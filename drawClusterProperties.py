@@ -30,7 +30,15 @@ def setHisto(histo, xTitle, yTitle, D2):
         histo.GetXaxis().SetNdivisions(510)
         histo.GetYaxis().SetNdivisions(510)
         
-        
+def fillHistos1D(chargeCuts, sizeXCuts, sizeYCuts, chInSubdet, sXInSubdet, sYInSubdet, ch, sX, sY):
+    if chargeCuts: histo1D[chInSubdet].Fill(ch)
+    if sizeXCuts:  histo1D[sXInSubdet].Fill(sX)
+    if sizeYCuts:  histo1D[sYInSubdet].Fill(sY)
+
+def fillHistos2D(chargeCuts, sizeXCuts, sizeYCuts, chInSubdetVsVar, sXInSubdetVsVar, sYInSubdetVsVar, var, ch, sX, sY):
+    if chargeCuts: histo[chInSubdetVsVar].Fill(var, ch)
+    if sizeXCuts:  histo[sXInSubdetVsVar].Fill(var, sX)
+    if sizeYCuts:  histo[sYInSubdetVsVar].Fill(var, sY) 
 # =============== 
 # options
 # ===============
@@ -82,12 +90,12 @@ parser.add_option('--maxRun', metavar='P', type='int', action='store',
 #                  help='input ntuple file')
 
 parser.add_option('--inputNTupleFiles', metavar='P', type='string', action='store',
-                  default='run_MC.txt', #run_317650_0.txt
+                  default='run_MC.txt', #run_317650_0.txt run_MC.txt
                   dest='inputNTupleFiles',
                   help='input ntuple files')
 
 parser.add_option('--outFile', metavar='P', type='string', action='store',
-                  default='out_MC.root', #out_317650_0.root
+                  default='out_MC.root', #out_317650_0.root out_MC.root
                   dest='outFile',
                   help='output file')
 
@@ -155,7 +163,12 @@ for i in range(len(group_int_ch_temp)):
 group_ins_ch    = ['chL1VsInslumi', 'chL2VsInslumi', 'chL3VsInslumi', 'chL4VsInslumi', 'chD1VsInslumi', 'chD2VsInslumi', 'chD3VsInslumi']
 group_ins_sizeX = ['sXL1VsInslumi', 'sXL2VsInslumi', 'sXL3VsInslumi', 'sXL4VsInslumi', 'sXD1VsInslumi', 'sXD2VsInslumi', 'sXD3VsInslumi']
 group_ins_sizeY = ['sYL1VsInslumi', 'sYL2VsInslumi', 'sYL3VsInslumi', 'sYL4VsInslumi', 'sYD1VsInslumi', 'sYD2VsInslumi', 'sYD3VsInslumi']
-group_all   = group_ins_ch + group_ins_sizeX + group_ins_sizeY + group_int_ch + group_int_sizeX + group_int_sizeY
+
+group_pu_ch    = ['chL1VsPileup', 'chL2VsPileup', 'chL3VsPileup', 'chL4VsPileup', 'chD1VsPileup', 'chD2VsPileup', 'chD3VsPileup']
+group_pu_sizeX = ['sXL1VsPileup', 'sXL2VsPileup', 'sXL3VsPileup', 'sXL4VsPileup', 'sXD1VsPileup', 'sXD2VsPileup', 'sXD3VsPileup']
+group_pu_sizeY = ['sYL1VsPileup', 'sYL2VsPileup', 'sYL3VsPileup', 'sYL4VsPileup', 'sYD1VsPileup', 'sYD2VsPileup', 'sYD3VsPileup']
+
+group_all   = group_pu_ch + group_pu_sizeX + group_pu_sizeY + group_ins_ch + group_ins_sizeX + group_ins_sizeY + group_int_ch + group_int_sizeX + group_int_sizeY
 
 
 histo = {}
@@ -165,15 +178,17 @@ for subdet in group_all:
     if 'Y'  in subdet and 'Int' in subdet: histo[subdet] = TH2F(subdet, subdet, 68, 0.0, 68.0, 20, 0.5, 20.5)
     if 'ch' in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 35, 0.0, 35.0, 60, 0.0, 120.0)
     if 'X'  in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 35, 0.0, 35.0, 20, 0.5, 20.5)
-    if 'Y'  in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 35, 0.0, 35.0, 20, 0.5, 20.5)
-   
+    if 'Y'  in subdet and 'Ins' in subdet: histo[subdet] = TH2F(subdet, subdet, 35, 0.0, 35.0, 20, 0.5, 20.5)    
+    if 'ch' in subdet and 'Pileup' in subdet: histo[subdet] = TH2F(subdet, subdet, 40, 20.0, 60.0, 60, 0.0, 120.0)
+    if 'X'  in subdet and 'Pileup' in subdet: histo[subdet] = TH2F(subdet, subdet, 40, 20.0, 60.0, 20, 0.5, 20.5)
+    if 'Y'  in subdet and 'Pileup' in subdet: histo[subdet] = TH2F(subdet, subdet, 40, 20.0, 60.0, 20, 0.5, 20.5)
 #print histo
 
 # run over ntuple branch/leaves
 nEventsAnalyzed = 0
 tSize = inChain.GetEntriesFast() #inChain.GetEntries()
 
-print 'size of EntriesFast', tSize
+#print 'size of EntriesFast', tSize
 print 'size of Entries', inChain.GetEntries()
 #for ich in xrange(tSize):
 for iev in xrange(inChain.GetEntries()):   
@@ -181,13 +196,10 @@ for iev in xrange(inChain.GetEntries()):
     if (iev % 10000) == 0 : print 'event: ', iev
     
     # sample every 10th entry if the size of tree has more than 100k entries to manage the time
-    #if (iev % 5) != 0: continue
+    if isMC==False:
+        if (iev % 10) != 0: continue
     nEventsAnalyzed = nEventsAnalyzed + 1
 
-    #if       nEventsAnalyzed >= 10000 and countRoot == 1: break
-    #elif     nEventsAnalyzed >= 20000 and countRoot == 2: break
-    #if iev > 100000: continue
-    
     #t = inChain.GetTree()
     inChain.GetEntry(iev)
     #t.GetEntry(iev)
@@ -195,7 +207,7 @@ for iev in xrange(inChain.GetEntries()):
     run = getattr(inChain, 'event/run')
     ls  = getattr(inChain, 'event/ls')
     event = getattr(inChain, 'event/evt')
-    
+    pileup = getattr(inChain, 'event/pileup')
     runls = float(run) * 100000 + float(ls)
     #print runls
     # cuts and variables   
@@ -215,40 +227,32 @@ for iev in xrange(inChain.GetEntries()):
     normSizeXCuts  = normSizeX > 0.
     normSizeYCuts  = normSizeY > 0.
 
-    # Fill the 1D histograms
-    if layer1:
-        #print 'norm charge', normCharge
-        if normChargeCuts: histo1D['chL1'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXL1'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYL1'].Fill(normSizeY)
-    if layer2:
-        if normChargeCuts: histo1D['chL2'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXL2'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYL2'].Fill(normSizeY)
-    if layer3:
-        if normChargeCuts: histo1D['chL3'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXL3'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYL3'].Fill(normSizeY)
-    if layer4:
-        if normChargeCuts: histo1D['chL4'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXL4'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYL4'].Fill(normSizeY)
-    if disk1:
-        if normChargeCuts: histo1D['chD1'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXD1'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYD1'].Fill(normSizeY)
-    if disk2:
-        if normChargeCuts: histo1D['chD2'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXD2'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYD2'].Fill(normSizeY)
-    if disk3:
-        if normChargeCuts: histo1D['chD3'].Fill(normCharge)
-        if normSizeXCuts:  histo1D['sXD3'].Fill(normSizeX)
-        if normSizeYCuts:  histo1D['sYD3'].Fill(normSizeY)
+    # Fill the 1D histograms, and 2D histograms for pileup in case running on MC
 
-    if not isMC:    
-        for i, row in enumerate(lMaps):
+    if layer1:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL1', 'sXL1', 'sYL1', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL1VsPileup', 'sXL1VsPileup', 'sYL1VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if layer2:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL2', 'sXL2', 'sYL2', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL2VsPileup', 'sXL2VsPileup', 'sYL2VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if layer3:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL3', 'sXL3', 'sYL3', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL3VsPileup', 'sXL3VsPileup', 'sYL3VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if layer4:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL4', 'sXL4', 'sYL4', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL4VsPileup', 'sXL4VsPileup', 'sYL4VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if disk1:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD1', 'sXD1', 'sYD1', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD1VsPileup', 'sXD1VsPileup', 'sYD1VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if disk2:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD2', 'sXD2', 'sYD2', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD2VsPileup', 'sXD2VsPileup', 'sYD2VsPileup', pileup, normCharge, normSizeX, normSizeY)
+    if disk3:
+        fillHistos1D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD3', 'sXD3', 'sYD3', normCharge, normSizeX, normSizeY)
+        if isMC: fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD3VsPileup', 'sXD3VsPileup', 'sYD3VsPileup', pileup, normCharge, normSizeX, normSizeY)
         
+    if isMC==False:
+        for i, row in enumerate(lMaps):       
             runls_m   = row[0]
             inslumi_m = row[1]
             intlumi_m = row[2]
@@ -259,34 +263,27 @@ for iev in xrange(inChain.GetEntries()):
         
             if runls == runls_m:
                 if layer1:
-                    if normChargeCuts: histo['chL1VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXL1VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYL1VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL1VsInslumi', 'sXL1VsInslumi', 'sYL1VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL1VsPileup', 'sXL1VsPileup', 'sYL1VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if layer2:
-                    if normChargeCuts: histo['chL2VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXL2VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYL2VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL2VsInslumi', 'sXL2VsInslumi', 'sYL2VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL2VsPileup', 'sXL2VsPileup', 'sYL2VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if layer3:
-                    if normChargeCuts: histo['chL3VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXL3VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYL3VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL3VsInslumi', 'sXL3VsInslumi', 'sYL3VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL3VsPileup', 'sXL3VsPileup', 'sYL3VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if layer4:
-                    if normChargeCuts: histo['chL4VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXL4VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYL4VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL4VsInslumi', 'sXL4VsInslumi', 'sYL4VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chL4VsPileup', 'sXL4VsPileup', 'sYL4VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if disk1:
-                    if normChargeCuts: histo['chD1VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXD1VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYD1VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD1VsInslumi', 'sXD1VsInslumi', 'sYD1VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD1VsPileup', 'sXD1VsPileup', 'sYD1VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if disk2:
-                    if normChargeCuts: histo['chD2VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXD2VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYD2VsInslumi'].Fill(inslumi_m, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD2VsInslumi', 'sXD2VsInslumi', 'sYD2VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD2VsPileup', 'sXD2VsPileup', 'sYD2VsPileup', pu_m, normCharge, normSizeX, normSizeY)
                 if disk3:
-                    if normChargeCuts: histo['chD3VsInslumi'].Fill(inslumi_m, normCharge)
-                    if normSizeXCuts:  histo['sXD3VsInslumi'].Fill(inslumi_m, normSizeX)
-                    if normSizeYCuts:  histo['sYD3VsInslumi'].Fill(inslumi_m, normSizeY)
-                
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD3VsInslumi', 'sXD3VsInslumi', 'sYD3VsInslumi', inslumi_m, normCharge, normSizeX, normSizeY)
+                    fillHistos2D(normChargeCuts, normSizeXCuts, normSizeYCuts, 'chD3VsPileup', 'sXD3VsPileup', 'sYD3VsPileup', pu_m, normCharge, normSizeX, normSizeY)
+                    
                 for i in range(len(inst_group)):
                     minLumi = float(inst_group[i].replace('Int', '').split('to')[0])
                     maxLumi = float(inst_group[i].replace('Int', '').split('to')[1])
@@ -325,7 +322,7 @@ for iev in xrange(inChain.GetEntries()):
 
 # Write the 2D plots to an output ROOT file
 f_out       = TFile(outFile, "RECREATE")
-if not isMC:
+if isMC==False:
     myDir6to8   = f_out.mkdir("inslumi6to8",   "inslumi6to8")
     myDir8to10  = f_out.mkdir("inslumi8to10",  "inslumi8to10")
     myDir11to13 = f_out.mkdir("inslumi11to13", "inslumi11to13")
@@ -335,9 +332,16 @@ if not isMC:
 for h in sorted(histo1D):
     f_out.cd()
     histo1D[h].Write()
+
     
-if not isMC:    
-    for h in sorted(histo):
+   
+for h in sorted(histo):
+    
+    if 'Pileup' in histo[h].GetName() :
+        f_out.cd()
+        histo[h].Write()
+        
+    if isMC==False:
         if 'Ins' in histo[h].GetName() :
             f_out.cd()
             histo[h].Write()
