@@ -209,17 +209,21 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
 //template <class G>
 TF1 *fitting(TH1D *hist){
 	// Setting fit range and start values
-	gStyle->SetOptFit(11);
+	gStyle->SetOptFit(1111);
 	Double_t fr[2];
 	Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
-	fr[0]=0.5*hist->GetMean();
-	fr[1]=2.0*hist->GetMean();
+	fr[0]=0.5*hist->GetMean();//0.5
+	fr[1]=2.5*hist->GetMean();//2.0
 
-    
-
-	pllo[0]=0.5; pllo[1]=5.0; pllo[2]=1.0; pllo[3]=0.4;
-	plhi[0]=5.0; plhi[1]=50.0; plhi[2]=100000000.0; plhi[3]=5.0;
-	sv[0]=1.8; sv[1]=20.0; sv[2]=50000.0; sv[3]=3.0;
+	//pllo[0]=0.5; pllo[1]=5.0; pllo[2]=1.0; pllo[3]=0.4;
+	pllo[0]=1.0; pllo[1]=10.0; pllo[2]=1000.0; pllo[3]=0.5;//for Rebin2
+	//pllo[0]=0.5; pllo[1]=8.0; pllo[2]=10000.0; pllo[3]=1.0;//random
+	//plhi[0]=5.0; plhi[1]=50.0; plhi[2]=100000000.0; plhi[3]=5.0;
+	plhi[0]=5.0; plhi[1]=30.0; plhi[2]=1000000000000.0; plhi[3]=8.0;//for Rebin2, good for Rebin1 Vs Int lumi
+	//plhi[0]=6.0; plhi[1]=22.0; plhi[2]=100000000000.0; plhi[3]=7.0;//random
+	//sv[0]=1.8; sv[1]=20.0; sv[2]=50000.0; sv[3]=3.0;
+        sv[0]=1.6; sv[1]=18.0; sv[2]=1000000.0; sv[3]=2.5;//for Rebin2
+	//sv[0]=1.8; sv[1]=18.0; sv[2]=1000000.0; sv[3]=4.0; //random
 
 	Double_t chisqr;
 	Int_t    ndf;
